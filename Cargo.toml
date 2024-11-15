@@ -1,0 +1,17 @@
+[package]
+name = "helper"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bitflags = "2.4.1"
+minreq = { version = "2.11.0", features = ["https"] }
+rustc-hash = "1.1.0"
+
+[dev-dependencies]
+md5 = "0.7"
+
+[lints.clippy]
+all = "warn"
