@@ -33,15 +33,10 @@ pub type HashSet<K> = rustc_hash::FxHashSet<K>;
 
 pub trait Runner {
     fn parse(&mut self, file: &[u8], part1: bool) -> Result<(), Error>;
-    fn part1(&mut self) -> Result<RunOutput, Error>;
-    fn part2(&mut self) -> Result<RunOutput, Error>;
+    fn run_part(&mut self, part: u8) -> Result<RunOutput, Error>;
 }
 
-pub trait EbcRunner: Runner {
-    fn part3(&mut self) -> Result<RunOutput, Error>;
-}
 pub type NewRunner = fn() -> Box<dyn Runner>;
-pub type NewEbcRunner = fn() -> Box<dyn EbcRunner>;
 
 pub fn output<F, R>(f: F) -> R
 where
