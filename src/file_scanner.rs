@@ -9,7 +9,7 @@ pub enum SearchType {
     Dir,
 }
 
-pub struct InputFileCache(BTreeMap<(usize, usize), [Vec<Vec<InputFileSet>>; 2]>);
+pub struct InputFileCache<const N: usize>(BTreeMap<(usize, usize), [[Vec<InputFileSet>; N]; 2]>);
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InputFile {
@@ -126,13 +126,13 @@ impl InputFile {
     }
 }
 
-impl InputFileCache {
+impl<const N: usize> InputFileCache<N> {
     const REAL: usize = 0;
     const SAMPLE: usize = 1;
 
     pub fn new() -> Result<Self, Error> {
         let input_files = search_up("input_files", SearchType::Dir)?;
-        let mut cache: BTreeMap<(usize, usize), [Vec<Vec<InputFileSet>>; 2]> = BTreeMap::new();
+        let mut cache: BTreeMap<(usize, usize), [[Vec<InputFileSet>; N]; 2]> = BTreeMap::new();
         let mut all_files = BTreeMap::new();
 
         for path in read_dir(input_files)? {
@@ -148,15 +148,12 @@ impl InputFileCache {
             if input_file.info.expect.is_none() {
                 let day = cache
                     .entry((input_file.info.year, input_file.info.day))
-                    .or_default();
+                    .or_insert(std::array::from_fn(|_| std::array::from_fn(|_| Vec::new())));
                 let parts = if input_file.info.sample {
                     &mut day[Self::SAMPLE]
                 } else {
                     &mut day[Self::REAL]
                 };
-                if parts.len() < input_file.info.part {
-                    parts.resize(input_file.info.part, Vec::new());
-                }
 
                 parts[input_file.info.part - 1].push(InputFileSet {
                     input_file: input_file.clone(),
@@ -204,7 +201,7 @@ impl InputFileCache {
         } else {
             &cache[Self::REAL]
         };
-        let files = parts.get(part).ok_or(Error::MissingInput)?;
+        let files = parts.get(part - 1).ok_or(Error::MissingInput)?;
         if files.is_empty() {
             Err(Error::MissingInput)
         } else {
@@ -334,8 +331,17 @@ pub(crate) fn get_files(
 
 #[test]
 fn test_input_file_cache() {
+    let input_files_cache: InputFileCache<2> =
+        InputFileCache::new().expect("Could not load input files");
+    println!("{:?}", input_files_cache.0);
+    println!("{:?}", input_files_cache.files(2024, 1, 1, false));
+}
+
+#[test]
+fn test_compare_input_file_cache() {
     use crate::find_day_part_files;
-    let input_files_cache = InputFileCache::new().expect("Could not load input files");
+    let input_files_cache: InputFileCache<2> =
+        InputFileCache::new().expect("Could not load input files");
     let year_days: Vec<(usize, usize)> = input_files_cache.0.keys().copied().collect();
     for (year, day) in year_days.iter().copied() {
         for part in 1..=2 {
