@@ -41,6 +41,17 @@ impl Lines {
         Ok(Self(lines))
     }
 
+    pub fn single_line(mut self) -> Result<String, Error> {
+        if self.len() == 1 {
+            Ok(self.remove(0))
+        } else {
+            Err(Error::InvalidInput(format!(
+                "Expected only 1 line, got {}",
+                self.len()
+            )))
+        }
+    }
+
     pub fn from_reader(r: impl Read, options: LinesOpt) -> Result<Self, Error> {
         Self::from_bufread(BufReader::new(r), options)
     }
