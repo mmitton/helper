@@ -77,18 +77,20 @@ impl InputFile {
             0
         };
 
+        let part_strs = ["1", "2", "3"];
+
         // Is this part 2?
         let part = match &expect {
             Some(part) => {
-                if next.parse::<u8>().is_ok() {
+                if part_strs.contains(&next) {
                     next = parts.pop()?;
                 }
                 *part
             }
             None => {
-                if let Ok(part) = next.parse() {
+                if let Some(idx) = part_strs.iter().position(|s| *s == next) {
                     next = parts.pop()?;
-                    part
+                    idx + 1
                 } else {
                     1
                 }
@@ -175,7 +177,7 @@ impl<const N: usize> InputFileCache<N> {
                 for (part, files) in real_sample.iter_mut().enumerate() {
                     for file in files.iter_mut() {
                         let mut expect_info = file.input_file.info;
-                        expect_info.expect = Some(part);
+                        expect_info.expect = Some(part + 1);
                         if let Some(expect_file) = all_files.get(&expect_info) {
                             file.expect_file = Some(expect_file.clone());
                         }
@@ -334,7 +336,10 @@ fn test_input_file_cache() {
     let input_files_cache: InputFileCache<2> =
         InputFileCache::new().expect("Could not load input files");
     println!("{:?}", input_files_cache.0);
+    println!();
     println!("{:?}", input_files_cache.files(2024, 1, 1, false));
+    println!();
+    println!("{:?}", input_files_cache.files(2024, 1, 1, true));
 }
 
 #[test]
