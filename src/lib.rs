@@ -32,7 +32,7 @@ pub type HashMap<K, V> = rustc_hash::FxHashMap<K, V>;
 pub type HashSet<K> = rustc_hash::FxHashSet<K>;
 
 pub trait Runner {
-    fn parse(&mut self, file: &[u8], part1: bool) -> Result<(), Error>;
+    fn parse(&mut self, file: &[u8], part: u8) -> Result<(), Error>;
     fn run_part(&mut self, part: u8) -> Result<RunOutput, Error>;
 }
 
