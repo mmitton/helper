@@ -9,7 +9,7 @@ pub enum SearchType {
     Dir,
 }
 
-pub struct InputFileCache(BTreeMap<(usize, usize), [Vec<InputFileSet>; 4]>);
+pub struct InputFileCache(BTreeMap<(usize, usize), [Vec<Vec<InputFileSet>>; 2]>);
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InputFile {
@@ -40,7 +40,7 @@ pub struct InputFileInfo {
     day: usize,
     expect: Option<usize>,
     sample: bool,
-    part2: bool,
+    part: usize,
     idx: u8,
 }
 
@@ -58,6 +58,7 @@ impl InputFile {
             "txt" => None,
             "expect1" => Some(1),
             "expect2" => Some(2),
+            "expect3" => Some(3),
             _ => return None,
         };
 
@@ -77,19 +78,19 @@ impl InputFile {
         };
 
         // Is this part 2?
-        let part2 = match &expect {
+        let part = match &expect {
             Some(part) => {
-                if next == "1" || next == "2" {
+                if next.parse::<u8>().is_ok() {
                     next = parts.pop()?;
                 }
-                *part == 2
+                *part
             }
             None => {
-                if next == "2" {
+                if let Ok(part) = next.parse() {
                     next = parts.pop()?;
-                    true
+                    part
                 } else {
-                    false
+                    1
                 }
             }
         };
@@ -118,7 +119,7 @@ impl InputFile {
                 day,
                 expect,
                 sample,
-                part2,
+                part,
                 idx,
             },
         })
@@ -126,12 +127,12 @@ impl InputFile {
 }
 
 impl InputFileCache {
-    const SAMPLE: usize = 2;
     const REAL: usize = 0;
+    const SAMPLE: usize = 1;
 
     pub fn new() -> Result<Self, Error> {
         let input_files = search_up("input_files", SearchType::Dir)?;
-        let mut cache: BTreeMap<(usize, usize), [Vec<InputFileSet>; 4]> = BTreeMap::new();
+        let mut cache: BTreeMap<(usize, usize), [Vec<Vec<InputFileSet>>; 2]> = BTreeMap::new();
         let mut all_files = BTreeMap::new();
 
         for path in read_dir(input_files)? {
@@ -148,37 +149,39 @@ impl InputFileCache {
                 let day = cache
                     .entry((input_file.info.year, input_file.info.day))
                     .or_default();
-                let idx = if input_file.info.sample {
-                    Self::SAMPLE
+                let parts = if input_file.info.sample {
+                    &mut day[Self::SAMPLE]
                 } else {
-                    Self::REAL
-                } + if input_file.info.part2 { 1 } else { 0 };
+                    &mut day[Self::REAL]
+                };
+                if parts.len() < input_file.info.part {
+                    parts.resize(input_file.info.part, Vec::new());
+                }
 
-                day[idx].push(InputFileSet {
+                parts[input_file.info.part - 1].push(InputFileSet {
                     input_file: input_file.clone(),
                     expect_file: None,
                 })
             }
         }
 
-        // Copy from part 1 to part 2 if part 2 is empty
+        // Copy from part n to part n+1 if part n+1 is empty
+        // and set expect files
         for input_files in cache.values_mut() {
-            for idx in [Self::SAMPLE, Self::REAL] {
-                if input_files[idx + 1].is_empty() {
-                    let mut files = input_files[idx].clone();
-                    for mut f in files.drain(..) {
-                        f.input_file.info.part2 = true;
-                        input_files[idx + 1].push(f);
+            for real_sample in input_files.iter_mut() {
+                for i in 1..real_sample.len() {
+                    if real_sample[i].is_empty() {
+                        real_sample[i] = real_sample[i - 1].clone();
                     }
                 }
-            }
 
-            for (idx, sets) in input_files.iter_mut().enumerate() {
-                for set in sets.iter_mut() {
-                    let mut expect_info = set.input_file.info;
-                    expect_info.expect = Some((idx % 2) + 1);
-                    if let Some(expect_file) = all_files.get(&expect_info) {
-                        set.expect_file = Some(expect_file.clone());
+                for (part, files) in real_sample.iter_mut().enumerate() {
+                    for file in files.iter_mut() {
+                        let mut expect_info = file.input_file.info;
+                        expect_info.expect = Some(part);
+                        if let Some(expect_file) = all_files.get(&expect_info) {
+                            file.expect_file = Some(expect_file.clone());
+                        }
                     }
                 }
             }
@@ -195,9 +198,13 @@ impl InputFileCache {
         sample: bool,
     ) -> Result<&[InputFileSet], Error> {
         let cache = self.0.get(&(year, day)).ok_or(Error::MissingInput)?;
-        let idx = (part - 1) + if sample { Self::SAMPLE } else { Self::REAL };
 
-        let files = cache.get(idx).ok_or(Error::MissingInput)?;
+        let parts = if sample {
+            &cache[Self::SAMPLE]
+        } else {
+            &cache[Self::REAL]
+        };
+        let files = parts.get(part).ok_or(Error::MissingInput)?;
         if files.is_empty() {
             Err(Error::MissingInput)
         } else {
