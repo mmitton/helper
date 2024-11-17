@@ -72,7 +72,7 @@ where
                 run_count,
                 *year,
                 *day,
-                1,
+                part,
                 &input_file_cache,
             );
             times_cache_entry.results.insert(part, result);
