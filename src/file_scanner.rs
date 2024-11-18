@@ -170,7 +170,18 @@ impl<const N: usize> InputFileCache<N> {
             for real_sample in input_files.iter_mut() {
                 for i in 1..real_sample.len() {
                     if real_sample[i].is_empty() {
-                        real_sample[i] = real_sample[i - 1].clone();
+                        let copied = real_sample[i - 1]
+                            .iter()
+                            .map(|f| {
+                                let mut input_file = f.input_file.clone();
+                                input_file.info.part += 1;
+                                InputFileSet {
+                                    input_file,
+                                    expect_file: None,
+                                }
+                            })
+                            .collect();
+                        real_sample[i] = copied;
                     }
                 }
 
