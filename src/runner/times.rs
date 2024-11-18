@@ -9,6 +9,7 @@ pub(super) struct TimesCacheEntry {
 
 pub(super) fn print_times(
     md: bool,
+    readme_header: &str,
     run_count: usize,
     parts: u8,
     times_cache: &BTreeMap<usize, Vec<TimesCacheEntry>>,
@@ -80,6 +81,19 @@ pub(super) fn print_times(
             print_dashed(parts, header);
         }
     }
+
+    if md {
+        use sysinfo::{CpuRefreshKind, RefreshKind, System};
+
+        let s =
+            System::new_with_specifics(RefreshKind::new().with_cpu(CpuRefreshKind::everything()));
+
+        println!("{readme_header}");
+        println!();
+        println!("Run on {}, single threaded.", s.cpus()[0].brand());
+        println!();
+    }
+
     if times_cache.len() > 1 {
         print_header(md, parts, "Year");
         for (year, times_cache) in times_cache.iter().rev() {
@@ -194,17 +208,13 @@ pub(super) fn print_times(
                 print!(" {time:>10} |");
             }
         }
-        for part in 1..=parts {
-            let percent = if let Some(dur) = part_totals.get(&part) {
-                format!("{:0.2}%", dur.as_secs_f64() / total.as_secs_f64() * 100.)
-            } else {
-                String::new()
-            };
-            if md {
-                print!(" {percent} |");
-            } else {
-                print!(" {percent:>8} |");
-            }
+        if md {
+            print!(" Total | {total:0.5} s |", total = total.as_secs_f64());
+        } else {
+            print!(
+                " {total:>19} |",
+                total = format!("Total {total:0.5} s", total = total.as_secs_f64())
+            );
         }
         println!();
 

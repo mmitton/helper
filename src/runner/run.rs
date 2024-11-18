@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use crate::{Error, InputFileCache, NewRunner};
+use crate::{output, Error, InputFileCache, NewRunner, YearDayPart};
 use colored::Colorize;
 
 fn run_part(
@@ -29,17 +29,17 @@ fn run_part(
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn run(
+pub fn run<const N: usize>(
     sample_data: bool,
     new_runner: &NewRunner,
-    output: bool,
+    print_output: bool,
     run_count: usize,
     year: usize,
     day: usize,
     part: u8,
-    input_file_cache: &InputFileCache<3>,
+    input_file_cache: &InputFileCache<N>,
 ) -> Result<Duration, Error> {
-    let ydp = crate::YearDayPart::new(year, day, part as usize);
+    let ydp = YearDayPart::new(year, day, part as usize);
 
     let f = input_file_cache.files(year, day, part as usize, sample_data)?;
     let files: Vec<(String, Option<String>)> = f.iter().map(|f| f.files()).collect();
@@ -48,9 +48,9 @@ pub fn run(
     let mut total_runs = 0;
     for _ in 0..run_count {
         for (input_path, expect_path) in files.iter() {
-            if output {
+            if print_output {
                 println!("{ydp}: Using {input_path}");
-                crate::output(|output| output.start_run(ydp));
+                output(|output| output.start_run(ydp));
             }
 
             let start = Instant::now();
@@ -65,10 +65,10 @@ pub fn run(
             total_elapsed += elapsed;
             total_runs += 1;
 
-            if output {
-                crate::output(|output| output.ensure_nl());
+            if print_output {
+                output(|output| output.ensure_nl());
                 if result.is_err() {
-                    if let Some(capture) = crate::output(|output| output.get_capture()) {
+                    if let Some(capture) = output(|output| output.get_capture()) {
                         print!("{capture}");
                     }
                 }

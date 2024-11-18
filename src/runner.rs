@@ -7,7 +7,11 @@ mod times;
 
 use times::TimesCacheEntry;
 
-pub fn main<F>(download_input: bool, register: F) -> Result<(), Error>
+pub fn main<F, const N: usize>(
+    download_input: bool,
+    readme_header: &str,
+    register: F,
+) -> Result<(), Error>
 where
     F: Fn(&mut BTreeMap<(usize, usize), (u8, super::NewRunner)>),
 {
@@ -36,8 +40,8 @@ where
         }
     }
 
-    let input_file_cache: InputFileCache<3> = super::InputFileCache::new()?;
-    for ((year, day), (parts, new_runner)) in runners.iter().rev() {
+    let input_file_cache: InputFileCache<N> = super::InputFileCache::new()?;
+    for ((year, day), (parts, new_runner)) in runners.iter() {
         if let Some(target_year) = target_year {
             if target_year != *year {
                 continue;
@@ -85,7 +89,7 @@ where
 
     if times.is_some() && !times_cache.is_empty() {
         let parts = *runners.values().map(|(parts, _)| parts).max().unwrap();
-        times::print_times(md, run_count, parts, &times_cache);
+        times::print_times(md, readme_header, run_count, parts, &times_cache);
     }
 
     Ok(())
