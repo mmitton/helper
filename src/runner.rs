@@ -36,7 +36,9 @@ where
 
     if download_input {
         if let (Some(year), Some(day)) = (target_year, target_day) {
-            super::download_input(year, day)?;
+            if let Err(e) = super::download_input(year, day) {
+                println!("Cannot download input for {year}-{day:02}.  {e:?}");
+            }
         }
     }
 
