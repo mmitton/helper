@@ -10,9 +10,11 @@ mod parser;
 mod permutations;
 mod priority_vec;
 mod run_output;
-pub mod runner;
 mod small_vec;
 mod tile_set;
+
+pub mod new_year;
+pub mod runner;
 
 pub use algorithms::*;
 pub use bit_array::BitArray;
