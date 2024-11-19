@@ -390,47 +390,4 @@ mod test {
             );
         }
     }
-
-    #[test]
-    fn md5_compare() {
-        const TOP: usize = 4 * 1024;
-        let mut buf = Vec::with_capacity(TOP);
-        for i in 0..TOP {
-            println!();
-            println!("{i}");
-            let a = MD5::digest(&buf);
-            let b = md5::compute(&buf);
-            assert_eq!(a, b.0, "{buf:?}");
-            buf.push((i % 0xFF) as u8);
-        }
-    }
-
-    #[test]
-    fn md5_bench_internal() {
-        const ITERS: usize = 50_000;
-        let payload: [u8; 4 * 1024] = std::array::from_fn(|i| i as u8);
-        println!();
-
-        // Benchmark internal MD5
-        let start = std::time::Instant::now();
-        for _ in 0..ITERS {
-            MD5::digest(&payload);
-        }
-        let elapsed = start.elapsed();
-        println!(
-            "Internal MD5 processed {ITERS} in {elapsed:?}.  {} iters per second",
-            ITERS as f64 / elapsed.as_secs_f64()
-        );
-
-        // Benchmark md5 crate
-        let start = std::time::Instant::now();
-        for _ in 0..ITERS {
-            md5::compute(payload);
-        }
-        let elapsed = start.elapsed();
-        println!(
-            "MD5 crate processed {ITERS} in {elapsed:?}.  {} iters per second",
-            ITERS as f64 / elapsed.as_secs_f64()
-        );
-    }
 }

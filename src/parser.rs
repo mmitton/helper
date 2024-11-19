@@ -1,22 +1,32 @@
 use crate::Error;
-use bitflags::bitflags;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
-use std::ops::{Deref, DerefMut};
-use std::path::{Path, PathBuf};
+use std::ops::{BitOr, Deref, DerefMut};
+use std::path::Path;
 
 #[derive(Debug)]
 pub struct Lines(Vec<String>);
 
-bitflags! {
-    #[repr(transparent)]
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub struct LinesOpt: u8 {
-        const RAW = 0;
-        const TRIM = 1 << 0;
-        const REMOVE_COMMENTS = 1 << 1;
-        const REMOVE_EMPTY = 2 << 1;
-        const ALL = !0;
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LinesOpt(u8);
+
+impl LinesOpt {
+    pub const RAW: Self = Self(0);
+    pub const TRIM: Self = Self(1 << 0);
+    pub const REMOVE_COMMENTS: Self = Self(1 << 1);
+    pub const REMOVE_EMPTY: Self = Self(2 << 1);
+    pub const ALL: Self = Self(!0);
+
+    fn contains(&self, rhs: Self) -> bool {
+        self.0 & rhs.0 == rhs.0
+    }
+}
+
+impl BitOr for LinesOpt {
+    type Output = Self;
+
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Self(self.0 | rhs.0)
     }
 }
 
@@ -88,55 +98,6 @@ impl<'a> Iterator for LinesIter<'a> {
             Some(s) => Some(s.as_str()),
             None => None,
         }
-    }
-}
-
-pub fn find_day_part_files(
-    year: usize,
-    day: usize,
-    part: usize,
-    sample_data: bool,
-) -> Result<Vec<(String, Option<String>)>, Error> {
-    super::file_scanner::download_input(year, day)?;
-
-    let (sample_1, sample_2, real_1, real_2) = super::file_scanner::get_files(year, day)?;
-
-    let (part1, mut part2) = if sample_data {
-        (sample_1, sample_2)
-    } else {
-        (real_1, real_2)
-    };
-
-    if part == 2 && part2.is_empty() {
-        part2.extend(part1.iter().cloned());
-    }
-
-    let files = match part {
-        1 => part1,
-        2 => part2,
-        _ => unreachable!(),
-    };
-
-    if files.is_empty() {
-        Err(Error::MissingInput)
-    } else {
-        let mut ret = Vec::new();
-        for f in files {
-            let output = if let Some(output) = f.strip_suffix(".txt") {
-                let output = format!("{output}.expect{part}");
-                if PathBuf::from(&output).is_file() {
-                    Some(output)
-                } else {
-                    None
-                }
-            } else {
-                None
-            };
-
-            ret.push((f, output));
-        }
-        ret.sort();
-        Ok(ret)
     }
 }
 
