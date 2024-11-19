@@ -209,8 +209,14 @@ pub(super) fn print_times(
             }
         }
         if md {
+            for _ in 1..=parts - 2 {
+                print!(" |");
+            }
             print!(" Total | {total:0.5} s |", total = total.as_secs_f64());
         } else {
+            for _ in 1..=parts - 2 {
+                print!(" {:9} ", " ");
+            }
             print!(
                 " {total:>19} |",
                 total = format!("Total {total:0.5} s", total = total.as_secs_f64())
