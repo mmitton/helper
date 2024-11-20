@@ -1,126 +1,157 @@
-use clap::{arg, Arg, Command};
+use std::path::Path;
 
-pub(crate) fn get() -> (
-    bool,
-    bool,
-    Option<usize>,
-    bool,
-    Option<usize>,
-    Option<usize>,
-) {
-    let matches = Command::new("runner")
-        .about("AoC Runner")
-        .arg(
-            Arg::new("sample-data")
-                .long("sample-data")
-                .visible_alias("sample")
-                .num_args(0)
-                .required(false)
-                .help("Run Sample Data"),
-        )
-        .arg(
-            Arg::new("real-data")
-                .long("real-data")
-                .visible_alias("real")
-                .num_args(0)
-                .required(false)
-                .help("Run Real Data"),
-        )
-        .arg(
-            Arg::new("times")
-                .long("times")
-                .num_args(1)
-                .default_missing_value("5")
-                .required(false)
-                .help("Generate Times Table"),
-        )
-        .arg(
-            Arg::new("md")
-                .long("md")
-                .num_args(0)
-                .required(false)
-                .help("Format Times Table as Markdown"),
-        )
-        .arg(
-            Arg::new("no-capture")
-                .long("no-capture")
-                .num_args(0)
-                .required(false)
-                .help("Do not capture output"),
-        )
-        .subcommand(
-            Command::new("today").about("Run latest day available.  Will be today during AoC"),
-        )
-        .subcommand(Command::new("all").about("Run all days"))
-        .subcommand(
-            Command::new("day")
-                .about("Run a given day")
-                .arg_required_else_help(true)
-                .arg(arg!(<YEAR> "Year").value_parser(clap::value_parser!(usize)))
-                .arg(arg!(<DAY> "Day").value_parser(clap::value_parser!(usize))),
-        )
-        .subcommand(
-            Command::new("year")
-                .about("Run all days in a given year")
-                .arg_required_else_help(true)
-                .arg(arg!(<YEAR> "Year").value_parser(clap::value_parser!(usize))),
-        )
-        .get_matches();
+#[derive(Debug, Default)]
+pub(crate) enum Run {
+    #[default]
+    Today,
+    All,
+    Year {
+        year: usize,
+    },
+    Day {
+        year: usize,
+        day: usize,
+    },
+}
 
-    let sample_data = matches
-        .get_one::<bool>("sample-data")
-        .copied()
-        .unwrap_or_default();
-    let real_data = matches
-        .get_one::<bool>("real-data")
-        .copied()
-        .unwrap_or_default();
-    let times = if let Some(times) = matches.get_one::<String>("times") {
-        match times.parse() {
-            Ok(times) => Some(times),
-            Err(_) => panic!("Number of times is not a number: {times:?}"),
+impl Run {
+    pub(crate) fn matches(&self, year: usize, day: usize, most_recent_day: (usize, usize)) -> bool {
+        match self {
+            Self::Today => year == most_recent_day.0 && day == most_recent_day.1,
+            Self::All => true,
+            Self::Year { year: y } => *y == year,
+            Self::Day { year: y, day: d } => *y == year && *d == day,
         }
-    } else {
-        None
-    };
+    }
+}
 
-    let md = matches.get_one::<bool>("md").copied().unwrap_or_default();
-    let no_capture = matches
-        .get_one::<bool>("no-capture")
-        .copied()
-        .unwrap_or_default();
+#[derive(Debug, Default)]
+pub(crate) struct Args {
+    pub(crate) sample: bool,
+    pub(crate) run: Run,
+    pub(crate) times: Option<usize>,
+    pub(crate) md: bool,
+    pub(crate) no_capture: bool,
+}
 
-    let sample_data = match (sample_data, real_data) {
-        (true, true) => panic!("Cannot use both sample-data and real-data"),
-        (true, false) => true,
-        (false, true) => false,
-        (false, false) => cfg!(debug_assertions),
-    };
+impl Args {
+    const DEFAULT_TIMES: usize = 5;
 
-    let (year, day) = match matches.subcommand() {
-        None | Some(("today", _)) => {
-            use chrono::prelude::*;
-            let today = Local::now();
-            match today.month() {
-                11 | 12 => match today.day() {
-                    1..=20 => (Some(today.year() as usize), Some(today.day() as usize)),
-                    _ => (Some(today.year() as usize), Some(20)),
+    fn help(exec: String, err: Option<&str>) -> ! {
+        let exec = Path::new(&exec);
+        std::eprintln!(
+            "Usage: {exec} [OPTIONS] [COMMAND]",
+            exec = exec.file_name().unwrap().to_str().unwrap()
+        );
+        std::eprintln!();
+        std::eprintln!("Commands:");
+        std::eprintln!("  today                Run latest day available");
+        std::eprintln!("  all                  Run all days");
+        std::eprintln!("  day {{year}} {{day}}     Run a given day");
+        std::eprintln!("  year {{year}}          Run all days in a given year");
+        std::eprintln!();
+        std::eprintln!("Options:");
+        std::eprintln!("      --sample");
+        std::eprintln!("      --sample-data    Run Sample Data");
+        std::eprintln!("      --release");
+        std::eprintln!("      --real");
+        std::eprintln!("      --real-data      Run Real Data");
+        std::eprintln!("      --times <times>  Generate Times Table");
+        std::eprintln!("      --md             Format Times Table as Markdown");
+        std::eprintln!("      --nocapture     Do not capture output");
+        std::eprintln!("  -h, --help           Print help");
+
+        if let Some(err) = err {
+            std::eprintln!();
+            std::eprintln!("Error: {err}");
+        }
+
+        std::process::exit(1);
+    }
+
+    pub(crate) fn new() -> Self {
+        let mut arg = Self::default();
+        arg.parse();
+        arg
+    }
+
+    fn parse(&mut self) {
+        let mut remaining = Vec::new();
+        let mut args = std::env::args().peekable();
+
+        self.sample = cfg!(debug_assertions);
+
+        let exec = if let Some(exec) = args.next() {
+            exec
+        } else {
+            "executable".into()
+        };
+
+        while let Some(arg) = args.next() {
+            match arg.as_str() {
+                "--sample-data" | "--sample" => self.sample = true,
+                "--real-data" | "--real" | "--release" => self.sample = false,
+                "--times" => match args.peek() {
+                    Some(arg) => {
+                        if let Ok(num) = arg.parse() {
+                            self.times = Some(num);
+                            args.next();
+                        } else {
+                            self.times = Some(Self::DEFAULT_TIMES);
+                        }
+                    }
+                    None => self.times = Some(Self::DEFAULT_TIMES),
                 },
-                _ => (Some(today.year() as usize - 1), Some(20)),
+                "--md" => self.md = true,
+                "--nocapture" => self.no_capture = true,
+                "--help" | "-h" => Self::help(exec, None),
+                _ if arg.starts_with("--") => {
+                    Self::help(exec, Some(format!("Unknown option {arg:?}").as_str()))
+                }
+                _ => remaining.push(arg),
             }
         }
-        Some(("all", _)) => (None, None),
-        Some(("day", submatches)) => {
-            let year = submatches.get_one::<usize>("YEAR").copied();
-            let day = submatches.get_one::<usize>("DAY").copied();
-            (year, day)
-        }
-        Some(("year", submatches)) => {
-            let year = submatches.get_one::<usize>("YEAR").copied();
-            (year, None)
-        }
-        subcommand => unreachable!("{subcommand:?}"),
-    };
 
-    (sample_data, no_capture, times, md, year, day)
+        if !remaining.is_empty() {
+            match remaining[0].as_str() {
+                "today" => {
+                    if remaining.len() != 1 {
+                        Self::help(exec, Some("today does not take any additional arguments"));
+                    }
+                    self.run = Run::Today;
+                }
+                "all" => {
+                    if remaining.len() != 1 {
+                        Self::help(exec, Some("all does not take any additional arguments"));
+                    }
+                    self.run = Run::All;
+                }
+                "year" => {
+                    if remaining.len() != 2 {
+                        Self::help(exec, Some("year takes 1 additional argument"));
+                    }
+                    if let Ok(year) = remaining[1].parse() {
+                        self.run = Run::Year { year };
+                    } else {
+                        Self::help(exec, Some("Invalid year"));
+                    }
+                }
+                "day" => {
+                    if remaining.len() != 3 {
+                        Self::help(exec, Some("day takes 2 additional arguments"));
+                    }
+                    match (remaining[1].parse(), remaining[2].parse()) {
+                        (Ok(year), Ok(day)) => self.run = Run::Day { year, day },
+                        (Err(_), Err(_)) => Self::help(exec, Some("Invalid year/day")),
+                        (Err(_), _) => Self::help(exec, Some("Invalid year")),
+                        (_, Err(_)) => Self::help(exec, Some("Invalid day")),
+                    }
+                }
+                _ => Self::help(
+                    exec,
+                    Some(format!("Invalid command: {:?}", remaining[0]).as_str()),
+                ),
+            }
+        }
+    }
 }

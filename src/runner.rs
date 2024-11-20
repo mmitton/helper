@@ -1,5 +1,5 @@
 use super::{Error, InputFileCache};
-use std::{cmp::Ordering, collections::BTreeMap};
+use std::collections::BTreeMap;
 
 mod args;
 mod run;
@@ -7,63 +7,88 @@ mod times;
 
 use times::TimesCacheEntry;
 
-pub fn main<F, const N: usize>(
+pub struct Config<RegisterFunc, MostRecentDayFunc>
+where
+    RegisterFunc: Fn(&mut BTreeMap<(usize, usize), (u8, super::NewRunner)>),
+    MostRecentDayFunc: FnOnce(usize, usize, usize) -> (usize, usize),
+{
     download_input: bool,
-    readme_header: &str,
-    register: F,
+    readme_header: &'static str,
+    register_func: RegisterFunc,
+    most_recent_day_func: MostRecentDayFunc,
+}
+
+impl<RegisterFunc, MostRecentDayFunc> Config<RegisterFunc, MostRecentDayFunc>
+where
+    RegisterFunc: Fn(&mut BTreeMap<(usize, usize), (u8, super::NewRunner)>),
+    MostRecentDayFunc: FnOnce(usize, usize, usize) -> (usize, usize),
+{
+    pub fn new(register_func: RegisterFunc, most_recent_day_func: MostRecentDayFunc) -> Self {
+        Self {
+            download_input: true,
+            readme_header: "",
+            register_func,
+            most_recent_day_func,
+        }
+    }
+
+    pub fn download_input(&mut self, download_input: bool) {
+        self.download_input = download_input;
+    }
+
+    pub fn readme_header(&mut self, readme_header: &'static str) {
+        self.readme_header = readme_header;
+    }
+}
+
+pub fn main<RegisterFunc, MostRecentDayFunc, const N: usize>(
+    config: Config<RegisterFunc, MostRecentDayFunc>,
 ) -> Result<(), Error>
 where
-    F: Fn(&mut BTreeMap<(usize, usize), (u8, super::NewRunner)>),
+    RegisterFunc: Fn(&mut BTreeMap<(usize, usize), (u8, super::NewRunner)>),
+    MostRecentDayFunc: FnOnce(usize, usize, usize) -> (usize, usize),
 {
-    let (sample_data, no_capture, times, md, target_year, target_day) = args::get();
+    let args = args::Args::new();
 
     let mut runners = BTreeMap::new();
-    register(&mut runners);
+    (config.register_func)(&mut runners);
 
-    if times.is_some() {
+    if args.times.is_some() {
         super::output(|output| output.no_output());
-    } else if cfg!(debug_assertions) || no_capture {
+    } else if cfg!(debug_assertions) || args.no_capture {
         super::output(|output| output.stdout());
     } else {
         super::output(|output| output.capture());
     }
 
-    use chrono::prelude::*;
-    let today = Local::now();
-
     let mut times_cache: BTreeMap<usize, Vec<TimesCacheEntry>> = BTreeMap::new();
-    let run_count = times.unwrap_or(1);
+    let run_count = args.times.unwrap_or(1);
 
-    if download_input {
-        if let (Some(year), Some(day)) = (target_year, target_day) {
-            if let Err(e) = super::download_input(year, day) {
+    if config.download_input {
+        if let args::Run::Day { year, day } = &args.run {
+            if let Err(e) = super::download_input(*year, *day) {
                 println!("Cannot download input for {year}-{day:02}.  {e:?}");
             }
         }
     }
 
+    use chrono::Datelike;
+    let today = chrono::Local::now();
+    let most_recent_day = (config.most_recent_day_func)(
+        today.year() as usize,
+        today.month() as usize,
+        today.day() as usize,
+    );
+
     let input_file_cache: InputFileCache<N> = super::InputFileCache::new()?;
     for ((year, day), (parts, new_runner)) in runners.iter() {
-        if let Some(target_year) = target_year {
-            if target_year != *year {
-                continue;
-            }
-        }
-        if let Some(target_day) = target_day {
-            if target_day != *day {
-                continue;
-            }
+        if !args.run.matches(*year, *day, most_recent_day) {
+            continue;
         }
 
-        match (
-            (today.year() as usize).cmp(year),
-            (today.month() as usize).cmp(&11),
-            (today.day() as usize).cmp(day),
-        ) {
-            (Ordering::Less, _, _) => continue,
-            (Ordering::Equal, Ordering::Less, _) => continue,
-            (Ordering::Equal, Ordering::Equal, Ordering::Less) => continue,
-            _ => {}
+        if !(*year < most_recent_day.0 || (*year == most_recent_day.0 && *day <= most_recent_day.1))
+        {
+            continue;
         }
 
         let mut times_cache_entry = TimesCacheEntry {
@@ -72,9 +97,9 @@ where
         };
         for part in 1..=*parts {
             let result = run::run(
-                sample_data,
+                args.sample,
                 new_runner,
-                times.is_none(),
+                args.times.is_none(),
                 run_count,
                 *year,
                 *day,
@@ -89,9 +114,15 @@ where
             .push(times_cache_entry);
     }
 
-    if times.is_some() && !times_cache.is_empty() {
+    if args.times.is_some() && !times_cache.is_empty() {
         let parts = *runners.values().map(|(parts, _)| parts).max().unwrap();
-        times::print_times(md, readme_header, run_count, parts, &times_cache);
+        times::print_times(
+            args.md,
+            config.readme_header,
+            run_count,
+            parts,
+            &times_cache,
+        );
     }
 
     Ok(())
