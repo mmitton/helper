@@ -132,7 +132,7 @@ impl<const N: usize> InputFileCache<N> {
     const REAL: usize = 0;
     const SAMPLE: usize = 1;
 
-    pub fn new() -> Result<Self, Error> {
+    pub fn new(allow_copy: bool) -> Result<Self, Error> {
         let input_files = search_up("input_files", SearchType::Dir)?;
         let mut cache: BTreeMap<(usize, usize), [[Vec<InputFileSet>; N]; 2]> = BTreeMap::new();
         let mut all_files = BTreeMap::new();
@@ -167,21 +167,23 @@ impl<const N: usize> InputFileCache<N> {
         // Copy from part n to part n+1 if part n+1 is empty
         // and set expect files
         for input_files in cache.values_mut() {
-            for real_sample in input_files.iter_mut() {
-                for i in 1..real_sample.len() {
-                    if real_sample[i].is_empty() {
-                        let copied = real_sample[i - 1]
-                            .iter()
-                            .map(|f| {
-                                let mut input_file = f.input_file.clone();
-                                input_file.info.part += 1;
-                                InputFileSet {
-                                    input_file,
-                                    expect_file: None,
-                                }
-                            })
-                            .collect();
-                        real_sample[i] = copied;
+            for (real_sample_idx, real_sample) in input_files.iter_mut().enumerate() {
+                if allow_copy && real_sample_idx == Self::REAL {
+                    for i in 1..real_sample.len() {
+                        if real_sample[i].is_empty() {
+                            let copied = real_sample[i - 1]
+                                .iter()
+                                .map(|f| {
+                                    let mut input_file = f.input_file.clone();
+                                    input_file.info.part += 1;
+                                    InputFileSet {
+                                        input_file,
+                                        expect_file: None,
+                                    }
+                                })
+                                .collect();
+                            real_sample[i] = copied;
+                        }
                     }
                 }
 
