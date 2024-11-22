@@ -13,6 +13,7 @@ where
     MostRecentDayFunc: FnOnce(usize, usize, usize) -> (usize, usize),
 {
     download_input: bool,
+    allow_copy: bool,
     readme_header: &'static str,
     register_func: RegisterFunc,
     most_recent_day_func: MostRecentDayFunc,
@@ -26,6 +27,7 @@ where
     pub fn new(register_func: RegisterFunc, most_recent_day_func: MostRecentDayFunc) -> Self {
         Self {
             download_input: true,
+            allow_copy: true,
             readme_header: "",
             register_func,
             most_recent_day_func,
@@ -38,6 +40,10 @@ where
 
     pub fn readme_header(&mut self, readme_header: &'static str) {
         self.readme_header = readme_header;
+    }
+
+    pub fn allow_copy(&mut self, allow_copy: bool) {
+        self.allow_copy = allow_copy;
     }
 }
 
@@ -80,7 +86,7 @@ where
         today.day() as usize,
     );
 
-    let input_file_cache: InputFileCache<N> = super::InputFileCache::new()?;
+    let input_file_cache: InputFileCache<N> = super::InputFileCache::new(config.allow_copy)?;
     for ((year, day), (parts, new_runner)) in runners.iter() {
         if !args.run.matches(*year, *day, most_recent_day) {
             continue;

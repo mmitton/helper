@@ -1,3 +1,4 @@
+#[derive(Clone)]
 pub struct BitArray {
     array: Vec<usize>,
     cap: usize,
@@ -9,6 +10,18 @@ impl BitArray {
         Self {
             array: vec![0; cap / usize::BITS as usize],
             cap,
+        }
+    }
+
+    pub fn copy_from(&mut self, other: &Self) {
+        if self.array.len() == other.array.len() {
+            self.array
+                .iter_mut()
+                .zip(other.array.iter())
+                .for_each(|(s, o)| *s = *o);
+        } else {
+            self.array = other.array.clone();
+            self.cap = other.cap;
         }
     }
 
