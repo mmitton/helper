@@ -25,7 +25,7 @@ pub use integer::Integer;
 pub use md5::{MD5String, MD5};
 pub use output::{Output, YearDayPart, OUTPUT};
 pub use parser::{Lines, LinesIter, LinesOpt};
-pub use permutations::Permutations;
+pub use permutations::{GroupedPermutations, Permutations};
 pub use priority_vec::PriorityVec;
 pub use run_output::RunOutput;
 pub use small_vec::SmallVec;

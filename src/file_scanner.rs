@@ -271,7 +271,7 @@ pub fn search_up(file: &str, file_type: SearchType) -> Result<PathBuf, Error> {
 #[test]
 fn test_input_file_cache() {
     let input_files_cache: InputFileCache<3> =
-        InputFileCache::new().expect("Could not load input files");
+        InputFileCache::new(false).expect("Could not load input files");
     println!("{:?}", input_files_cache.0);
     println!();
     println!("{:?}", input_files_cache.files(2024, 1, 1, false));
