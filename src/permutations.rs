@@ -81,7 +81,6 @@ where
 {
     groups: Vec<Group<T>>,
     next_vec: Vec<T>,
-    next_filled_in: Vec<bool>,
     next_spans: Vec<(usize, Span, T)>,
     done: bool,
 }
@@ -104,7 +103,6 @@ impl<T: Copy + std::fmt::Debug> GroupedPermutations<T> {
         Self {
             groups,
             next_vec,
-            next_filled_in: vec![false; total_len],
             next_spans: vec![(0, Span::None(0), v); groups_slice.len()],
             done: false,
         }
