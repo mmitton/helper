@@ -22,4 +22,39 @@ impl<T: Integer> Point3D<T> {
     pub fn manhattan_dist(&self, rhs: &Self) -> T {
         (self.x - rhs.x).abs() + (self.y - rhs.y).abs() + (self.z - rhs.z).abs()
     }
+
+    pub fn cardinal_neighbors(&self) -> [Self; 6] {
+        [
+            Self {
+                x: self.x.wrapping_sub(T::ONE),
+                y: self.y,
+                z: self.z,
+            },
+            Self {
+                x: self.x.wrapping_add(T::ONE),
+                y: self.y,
+                z: self.z,
+            },
+            Self {
+                x: self.x,
+                y: self.y.wrapping_sub(T::ONE),
+                z: self.z,
+            },
+            Self {
+                x: self.x,
+                y: self.y.wrapping_add(T::ONE),
+                z: self.z,
+            },
+            Self {
+                x: self.x,
+                y: self.y,
+                z: self.z.wrapping_sub(T::ONE),
+            },
+            Self {
+                x: self.x,
+                y: self.y,
+                z: self.z.wrapping_add(T::ONE),
+            },
+        ]
+    }
 }

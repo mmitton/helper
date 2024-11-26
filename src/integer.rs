@@ -22,10 +22,15 @@ pub trait Integer:
 {
     const ZERO: Self;
     const ONE: Self;
+    const MIN: Self;
+    const MAX: Self;
 
     fn abs(self) -> Self {
         self
     }
+
+    fn wrapping_add(self, rhs: Self) -> Self;
+    fn wrapping_sub(self, rhs: Self) -> Self;
 }
 
 macro_rules! impl_integer {
@@ -33,9 +38,19 @@ macro_rules! impl_integer {
         impl Integer for $ty {
             const ZERO: Self = 0;
             const ONE: Self = 1;
+            const MIN: Self = <$ty>::MIN;
+            const MAX: Self = <$ty>::MAX;
 
             fn abs(self) -> Self {
                 self.abs()
+            }
+
+            fn wrapping_add(self, rhs: Self) -> Self {
+                self.wrapping_add(rhs)
+            }
+
+            fn wrapping_sub(self, rhs: Self) -> Self {
+                self.wrapping_sub(rhs)
             }
         }
     };
@@ -43,6 +58,16 @@ macro_rules! impl_integer {
         impl Integer for $ty {
             const ZERO: Self = 0;
             const ONE: Self = 1;
+            const MIN: Self = <$ty>::MIN;
+            const MAX: Self = <$ty>::MAX;
+
+            fn wrapping_add(self, rhs: Self) -> Self {
+                self.wrapping_add(rhs)
+            }
+
+            fn wrapping_sub(self, rhs: Self) -> Self {
+                self.wrapping_sub(rhs)
+            }
         }
     };
 }

@@ -1,6 +1,7 @@
 mod algorithms;
 mod bit_array;
 mod bit_grid;
+mod dijkstra;
 mod error;
 mod file_scanner;
 mod integer;
@@ -20,6 +21,7 @@ pub mod runner;
 pub use algorithms::*;
 pub use bit_array::BitArray;
 pub use bit_grid::*;
+pub use dijkstra::Dijkstra;
 pub use error::Error;
 pub(crate) use file_scanner::{download_input, search_up, InputFileCache, SearchType};
 pub use integer::Integer;
