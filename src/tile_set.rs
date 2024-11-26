@@ -1,6 +1,6 @@
-use std::{cmp::Ordering, fmt::Display};
+use std::fmt::Display;
 
-use crate::Integer;
+use crate::{Integer, Point2D};
 
 #[derive(Default)]
 pub struct TileSet<T: Integer> {
@@ -50,8 +50,8 @@ impl<'a, T: Integer> IntoIterator for &'a TileSet<T> {
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Tile<T: Integer> {
-    s: Point<T>,
-    e: Point<T>,
+    s: Point2D<T>,
+    e: Point2D<T>,
 }
 
 impl<T: Integer> Display for Tile<T> {
@@ -61,7 +61,7 @@ impl<T: Integer> Display for Tile<T> {
 }
 
 impl<T: Integer> Tile<T> {
-    pub fn new(s: Point<T>, e: Point<T>) -> Self {
+    pub fn new(s: Point2D<T>, e: Point2D<T>) -> Self {
         Self { s, e }
     }
 
@@ -76,7 +76,7 @@ impl<T: Integer> Tile<T> {
         let y1 = self.e.y.min(rhs.e.y);
 
         if x0 <= x1 && y0 <= y1 {
-            Some(Self::new(Point::new(x0, y0), Point::new(x1, y1)))
+            Some(Self::new(Point2D::new(x0, y0), Point2D::new(x1, y1)))
         } else {
             None
         }
@@ -93,8 +93,8 @@ impl<T: Integer> Tile<T> {
                 let x0 = overlap.s.x.min(self.s.x);
                 let x1 = overlap.e.x.max(self.e.x);
                 let t = Tile::new(
-                    Point::new(x0, self.s.y),
-                    Point::new(x1, overlap.s.y - T::ONE),
+                    Point2D::new(x0, self.s.y),
+                    Point2D::new(x1, overlap.s.y - T::ONE),
                 );
                 remaining.push(t);
             }
@@ -102,16 +102,16 @@ impl<T: Integer> Tile<T> {
             if self.s.x < overlap.s.x {
                 // Area 4
                 let t = Tile::new(
-                    Point::new(self.s.x, overlap.s.y),
-                    Point::new(overlap.s.x - T::ONE, overlap.e.y),
+                    Point2D::new(self.s.x, overlap.s.y),
+                    Point2D::new(overlap.s.x - T::ONE, overlap.e.y),
                 );
                 remaining.push(t);
             }
             if self.e.x > overlap.e.x {
                 // Area 5
                 let t = Tile::new(
-                    Point::new(overlap.e.x + T::ONE, overlap.s.y),
-                    Point::new(self.e.x, overlap.e.y),
+                    Point2D::new(overlap.e.x + T::ONE, overlap.s.y),
+                    Point2D::new(self.e.x, overlap.e.y),
                 );
                 remaining.push(t);
             }
@@ -121,8 +121,8 @@ impl<T: Integer> Tile<T> {
                 let x0 = overlap.s.x.min(self.s.x);
                 let x1 = overlap.e.x.max(self.e.x);
                 let t = Tile::new(
-                    Point::new(x0, overlap.e.y + T::ONE),
-                    Point::new(x1, self.e.y),
+                    Point2D::new(x0, overlap.e.y + T::ONE),
+                    Point2D::new(x1, self.e.y),
                 );
                 remaining.push(t);
             }
@@ -140,71 +140,5 @@ impl<T: Integer> Tile<T> {
         } else {
             None
         }
-    }
-}
-
-#[derive(Copy, Clone, Debug, Default, Hash, PartialEq, Eq)]
-pub struct Point<T: Integer, const INVERT_SORT: bool = false, const REVERSE_SORT: bool = false> {
-    pub x: T,
-    pub y: T,
-}
-
-impl<T: Integer, const INVERT_SORT: bool, const REVERSE_SORT: bool> Ord
-    for Point<T, INVERT_SORT, REVERSE_SORT>
-{
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        let cmp = if !INVERT_SORT {
-            // Sort X then Y
-            if self.x != other.x {
-                self.x.cmp(&other.x)
-            } else {
-                self.y.cmp(&other.y)
-            }
-        } else {
-            // Sort Y then X
-            if self.y != other.y {
-                self.y.cmp(&other.y)
-            } else {
-                self.x.cmp(&other.x)
-            }
-        };
-
-        if REVERSE_SORT {
-            match cmp {
-                Ordering::Less => Ordering::Greater,
-                Ordering::Equal => Ordering::Equal,
-                Ordering::Greater => Ordering::Less,
-            }
-        } else {
-            cmp
-        }
-    }
-}
-
-impl<T: Integer, const INVERT_SORT: bool, const REVERSE_SORT: bool> PartialOrd
-    for Point<T, INVERT_SORT, REVERSE_SORT>
-{
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl<T: Integer, const INVERT_SORT: bool, const REVERSE_SORT: bool> Display
-    for Point<T, INVERT_SORT, REVERSE_SORT>
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}x{}", self.x, self.y)
-    }
-}
-
-impl<T: Integer, const INVERT_SORT: bool, const REVERSE_SORT: bool>
-    Point<T, INVERT_SORT, REVERSE_SORT>
-{
-    pub fn new(x: T, y: T) -> Self {
-        Self { x, y }
-    }
-
-    pub fn manhattan_dist(&self, rhs: &Self) -> T {
-        (self.x - rhs.x).abs() + (self.y - rhs.y).abs()
     }
 }
