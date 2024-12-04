@@ -70,14 +70,6 @@ where
     let mut times_cache: BTreeMap<usize, Vec<TimesCacheEntry>> = BTreeMap::new();
     let run_count = args.times.unwrap_or(1);
 
-    if config.download_input {
-        if let args::Run::Day { year, day } = &args.run {
-            if let Err(e) = super::download_input(*year, *day) {
-                println!("Cannot download input for {year}-{day:02}.  {e:?}");
-            }
-        }
-    }
-
     use chrono::Datelike;
     let today = chrono::Local::now();
     let most_recent_day = (config.most_recent_day_func)(
@@ -85,6 +77,22 @@ where
         today.month() as usize,
         today.day() as usize,
     );
+    if config.download_input {
+        match &args.run {
+            args::Run::Day { year, day } => {
+                if let Err(e) = super::download_input(*year, *day) {
+                    println!("Cannot download input for {year}-{day:02}.  {e:?}");
+                }
+            }
+            _ => {
+                let year = most_recent_day.0;
+                let day = most_recent_day.1;
+                if let Err(e) = super::download_input(year, day) {
+                    println!("Cannot download input for {year}-{day:02}.  {e:?}");
+                }
+            }
+        }
+    }
 
     let input_file_cache: InputFileCache<N> = super::InputFileCache::new(config.allow_copy)?;
     for ((year, day), (parts, new_runner)) in runners.iter() {
