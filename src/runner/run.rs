@@ -46,7 +46,7 @@ pub fn run<const N: usize>(
 
     let mut total_elapsed = Duration::new(0, 0);
     let mut total_runs = 0;
-    for _ in 0..run_count {
+    for run in 0..=run_count {
         for (input_path, expect_path) in files.iter() {
             if print_output {
                 println!("{ydp}: Using {input_path}");
@@ -61,6 +61,11 @@ pub fn run<const N: usize>(
                 None
             };
             let result = run_part(new_runner, part, &input, expect.as_ref());
+
+            if run_count > 1 && run == 0 {
+                continue;
+            }
+
             let elapsed = start.elapsed();
             total_elapsed += elapsed;
             total_runs += 1;
