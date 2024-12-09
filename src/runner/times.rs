@@ -10,7 +10,6 @@ pub(super) struct TimesCacheEntry {
 pub(super) fn print_times(
     md: bool,
     readme_header: &str,
-    run_count: usize,
     parts: u8,
     times_cache: &BTreeMap<usize, Vec<TimesCacheEntry>>,
 ) {
@@ -83,16 +82,15 @@ pub(super) fn print_times(
     }
 
     if md {
-        use sysinfo::{CpuRefreshKind, RefreshKind, System};
-
-        let s =
-            System::new_with_specifics(RefreshKind::new().with_cpu(CpuRefreshKind::everything()));
-
         println!("{readme_header}");
         println!();
-        println!("Run on {}, single threaded.", s.cpus()[0].brand());
-        println!();
     }
+    use sysinfo::{CpuRefreshKind, RefreshKind, System};
+
+    let s = System::new_with_specifics(RefreshKind::new().with_cpu(CpuRefreshKind::everything()));
+
+    println!("Run on {}, single threaded.", s.cpus()[0].brand());
+    println!();
 
     if times_cache.len() > 1 {
         print_header(md, parts, "Year");
@@ -150,11 +148,7 @@ pub(super) fn print_times(
             }
         }
 
-        if run_count > 1 {
-            println!("Year: {year}  Averaged over {run_count} runs.");
-        } else {
-            println!("Year: {year}");
-        }
+        println!("Year: {year}");
         print_header(md, parts, "Day");
         for TimesCacheEntry { day, results } in times_cache.iter().rev() {
             if !results.values().any(|result| result.is_ok()) {

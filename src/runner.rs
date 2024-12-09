@@ -59,7 +59,7 @@ where
     let mut runners = BTreeMap::new();
     (config.register_func)(&mut runners);
 
-    if args.times.is_some() {
+    if args.times {
         super::output(|output| output.no_output());
     } else if cfg!(debug_assertions) || args.no_capture {
         super::output(|output| output.stdout());
@@ -68,7 +68,6 @@ where
     }
 
     let mut times_cache: BTreeMap<usize, Vec<TimesCacheEntry>> = BTreeMap::new();
-    let run_count = args.times.unwrap_or(1);
 
     use chrono::Datelike;
     let today = chrono::Local::now();
@@ -113,8 +112,7 @@ where
             let result = run::run(
                 args.sample,
                 new_runner,
-                args.times.is_none(),
-                run_count,
+                args.times,
                 *year,
                 *day,
                 part,
@@ -128,15 +126,9 @@ where
             .push(times_cache_entry);
     }
 
-    if args.times.is_some() && !times_cache.is_empty() {
+    if args.times && !times_cache.is_empty() {
         let parts = *runners.values().map(|(parts, _)| parts).max().unwrap();
-        times::print_times(
-            args.md,
-            config.readme_header,
-            run_count,
-            parts,
-            &times_cache,
-        );
+        times::print_times(args.md, config.readme_header, parts, &times_cache);
     }
 
     Ok(())

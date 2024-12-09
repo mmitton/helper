@@ -32,8 +32,7 @@ fn run_part(
 pub fn run<const N: usize>(
     sample_data: bool,
     new_runner: &NewRunner,
-    print_output: bool,
-    run_count: usize,
+    times: bool,
     year: usize,
     day: usize,
     part: u8,
@@ -44,12 +43,10 @@ pub fn run<const N: usize>(
     let f = input_file_cache.files(year, day, part as usize, sample_data)?;
     let files: Vec<(String, Option<String>)> = f.iter().map(|f| f.files()).collect();
 
-    let mut total_elapsed = Duration::new(0, 0);
-    let mut total_runs = 0;
-    let warm_up = if run_count > 1 { 2 } else { 0 };
-    for run in 0..run_count + warm_up {
+    let mut elapsed = Vec::new();
+    loop {
         for (input_path, expect_path) in files.iter() {
-            if print_output {
+            if !times {
                 println!("{ydp}: Using {input_path}");
                 output(|output| output.start_run(ydp));
             }
@@ -63,15 +60,9 @@ pub fn run<const N: usize>(
             };
             let result = run_part(new_runner, part, &input, expect.as_ref());
 
-            if run_count > 1 && run < warm_up {
-                continue;
-            }
+            elapsed.push(start.elapsed());
 
-            let elapsed = start.elapsed();
-            total_elapsed += elapsed;
-            total_runs += 1;
-
-            if print_output {
+            if !times {
                 output(|output| output.ensure_nl());
                 if result.is_err() {
                     if let Some(capture) = output(|output| output.get_capture()) {
@@ -136,6 +127,18 @@ pub fn run<const N: usize>(
                 }
             }
         }
+        if !times {
+            break;
+        }
+        if elapsed.iter().sum::<Duration>() > Duration::from_secs_f64(0.2) || elapsed.len() >= 10 {
+            break;
+        }
     }
-    Ok(total_elapsed / total_runs)
+    if elapsed.len() > 5 {
+        // Remove lowest and highest runs
+        elapsed.sort();
+        elapsed.remove(0);
+        elapsed.pop();
+    }
+    Ok(elapsed.iter().sum::<Duration>() / elapsed.len() as u32)
 }

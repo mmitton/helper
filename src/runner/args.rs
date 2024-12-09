@@ -29,14 +29,12 @@ impl Run {
 pub(crate) struct Args {
     pub(crate) sample: bool,
     pub(crate) run: Run,
-    pub(crate) times: Option<usize>,
+    pub(crate) times: bool,
     pub(crate) md: bool,
     pub(crate) no_capture: bool,
 }
 
 impl Args {
-    const DEFAULT_TIMES: usize = 5;
-
     fn help(exec: String, err: Option<&str>) -> ! {
         let exec = Path::new(&exec);
         std::eprintln!(
@@ -56,9 +54,9 @@ impl Args {
         std::eprintln!("      --release");
         std::eprintln!("      --real");
         std::eprintln!("      --real-data      Run Real Data");
-        std::eprintln!("      --times <times>  Generate Times Table");
+        std::eprintln!("      --times          Generate Times Table");
         std::eprintln!("      --md             Format Times Table as Markdown");
-        std::eprintln!("      --nocapture     Do not capture output");
+        std::eprintln!("      --nocapture      Do not capture output");
         std::eprintln!("  -h, --help           Print help");
 
         if let Some(err) = err {
@@ -91,17 +89,7 @@ impl Args {
             match arg.as_str() {
                 "--sample-data" | "--sample" => self.sample = true,
                 "--real-data" | "--real" | "--release" => self.sample = false,
-                "--times" => match args.peek() {
-                    Some(arg) => {
-                        if let Ok(num) = arg.parse() {
-                            self.times = Some(num);
-                            args.next();
-                        } else {
-                            self.times = Some(Self::DEFAULT_TIMES);
-                        }
-                    }
-                    None => self.times = Some(Self::DEFAULT_TIMES),
-                },
+                "--times" => self.times = true,
                 "--md" => self.md = true,
                 "--nocapture" => self.no_capture = true,
                 "--help" | "-h" => Self::help(exec, None),
