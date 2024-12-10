@@ -93,6 +93,11 @@ pub(super) fn print_times(
     println!();
 
     if times_cache.len() > 1 {
+        if md {
+            println!("#### Year Totals");
+        } else {
+            println!("Year Totals");
+        }
         print_header(md, parts, "Year");
         for (year, times_cache) in times_cache.iter().rev() {
             let mut total = Duration::new(0, 0);
@@ -106,7 +111,7 @@ pub(super) fn print_times(
                 }
             }
             if md {
-                print!("| {year} |");
+                print!("| [{year}](#year{year}) |");
                 for part in 1..=parts {
                     if let Some(dur) = part_totals.get(&part) {
                         print!(" {dur:0.5} s |", dur = dur.as_secs_f64());
@@ -148,7 +153,11 @@ pub(super) fn print_times(
             }
         }
 
-        println!("Year: {year}");
+        if md {
+            println!("#### <a name='year{year}'>{year}</a>");
+        } else {
+            println!("{year}");
+        }
         print_header(md, parts, "Day");
         for TimesCacheEntry { day, results } in times_cache.iter().rev() {
             if !results.values().any(|result| result.is_ok()) {
