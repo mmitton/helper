@@ -50,4 +50,10 @@ impl BitArray {
 
         self.array[idx] & (1 << bit) != 0
     }
+
+    pub fn popcount(&self) -> usize {
+        self.array
+            .iter()
+            .fold(0, |popcount, v| popcount + v.count_ones() as usize)
+    }
 }
