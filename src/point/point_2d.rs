@@ -65,4 +65,13 @@ impl<T: Integer, const INVERT_SORT: bool, const REVERSE_SORT: bool>
     pub fn manhattan_dist(&self, rhs: &Self) -> T {
         (self.x - rhs.x).abs() + (self.y - rhs.y).abs()
     }
+
+    pub fn cardinal_neighbors(&self) -> [Self; 4] {
+        [
+            Self::new(self.x.wrapping_sub(T::ONE), self.y),
+            Self::new(self.x.wrapping_add(T::ONE), self.y),
+            Self::new(self.x, self.y.wrapping_sub(T::ONE)),
+            Self::new(self.x, self.y.wrapping_add(T::ONE)),
+        ]
+    }
 }

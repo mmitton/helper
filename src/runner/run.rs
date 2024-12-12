@@ -119,7 +119,7 @@ pub fn run<const N: usize>(
                         println!("{ydp}: Error: {}", format!("{e:?}").bright_red());
                     }
                 }
-                println!("{ydp}: {elapsed:?}");
+                println!("{ydp}: {elapsed:?}", elapsed = elapsed.last().unwrap());
                 println!();
             } else if let Err(e) = result {
                 if !matches!(e, Error::Skipped) {
