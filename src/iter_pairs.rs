@@ -1,18 +1,20 @@
-pub trait IterPairs<I: Iterator>
+pub trait IterPairs<I: IntoIterator, P: Iterator>
 where
     I::Item: Copy,
+    P: Iterator<Item = (I::Item, I::Item)>,
 {
-    fn pairs(self) -> IterPair<I>;
+    fn pairs(self) -> IterPair<I::IntoIter>;
 }
 
-impl<I> IterPairs<I> for I
+impl<I> IterPairs<I, IterPair<I::IntoIter>> for I
 where
-    I: Iterator,
+    I: IntoIterator,
     I::Item: Copy,
 {
-    fn pairs(mut self) -> IterPair<I> {
-        let last = self.next();
-        IterPair { iter: self, last }
+    fn pairs(self) -> IterPair<I::IntoIter> {
+        let mut iter = self.into_iter();
+        let last = iter.next();
+        IterPair { iter, last }
     }
 }
 
@@ -39,5 +41,28 @@ where
             }
             _ => None,
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::IterPairs;
+
+    #[test]
+    fn pairs_iter() {
+        let v = [1, 2, 3];
+        let mut iter = v.iter().pairs();
+        assert_eq!(iter.next(), Some((&1, &2)));
+        assert_eq!(iter.next(), Some((&2, &3)));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn pairs_slice() {
+        let v = &[1, 2, 3];
+        let mut iter = v.pairs();
+        assert_eq!(iter.next(), Some((&1, &2)));
+        assert_eq!(iter.next(), Some((&2, &3)));
+        assert_eq!(iter.next(), None);
     }
 }
