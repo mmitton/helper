@@ -1,17 +1,19 @@
-pub trait IterPairs<I: IntoIterator, P: Iterator>
+pub trait IterPairs<I, Item, P: Iterator>
 where
-    I::Item: Copy,
-    P: Iterator<Item = (I::Item, I::Item)>,
+    Item: Copy,
+    I: Iterator<Item = Item>,
+    P: Iterator<Item = (Item, Item)>,
 {
-    fn pairs(self) -> IterPair<I::IntoIter>;
+    fn pairs(self) -> IterPair<I>;
 }
 
-impl<I> IterPairs<I, IterPair<I::IntoIter>> for I
+impl<I, Item, S> IterPairs<I, Item, IterPair<I>> for S
 where
-    I: IntoIterator,
-    I::Item: Copy,
+    Item: Copy,
+    S: IntoIterator<Item = Item, IntoIter = I>,
+    I: Iterator<Item = Item>,
 {
-    fn pairs(self) -> IterPair<I::IntoIter> {
+    fn pairs(self) -> IterPair<I> {
         let mut iter = self.into_iter();
         let last = iter.next();
         IterPair { iter, last }
