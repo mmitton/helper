@@ -1,5 +1,5 @@
 use crate::Integer;
-use std::{cmp::Ordering, fmt::Display};
+use std::{cmp::Ordering, fmt::Display, ops::Add};
 
 #[derive(Copy, Clone, Debug, Default, Hash, PartialEq, Eq)]
 pub struct Point2D<T: Integer, const INVERT_SORT: bool = false, const REVERSE_SORT: bool = false> {
@@ -73,5 +73,14 @@ impl<T: Integer, const INVERT_SORT: bool, const REVERSE_SORT: bool>
             Self::new(self.x, self.y.wrapping_sub(T::ONE)),
             Self::new(self.x, self.y.wrapping_add(T::ONE)),
         ]
+    }
+}
+
+impl<T: Integer, const INVERT_SORT: bool, const REVERSE_SORT: bool> Add
+    for Point2D<T, INVERT_SORT, REVERSE_SORT>
+{
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self::Output {
+        Point2D::new(self.x + rhs.x, self.y + rhs.y)
     }
 }
