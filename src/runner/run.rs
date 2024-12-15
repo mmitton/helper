@@ -130,7 +130,7 @@ pub fn run<const N: usize>(
         if !times {
             break;
         }
-        if elapsed.iter().sum::<Duration>() > Duration::from_secs_f64(0.2) || elapsed.len() >= 10 {
+        if elapsed.iter().sum::<Duration>() > Duration::from_secs_f64(1.0) || elapsed.len() >= 10 {
             break;
         }
     }
