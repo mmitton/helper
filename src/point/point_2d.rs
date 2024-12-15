@@ -106,81 +106,33 @@ impl<T: Integer, const INVERT_SORT: bool, const REVERSE_SORT: bool>
     }
 }
 
-impl<T: Integer, const INVERT_SORT: bool, const REVERSE_SORT: bool> Add
-    for Point2D<T, INVERT_SORT, REVERSE_SORT>
-{
-    type Output = Self;
+macro_rules! impl_math {
+    ($op_fn:ident, $op_trait:ident, $op:ident, $assign_trait:ident, $assign:ident) => {
+        impl<T: Integer, const INVERT_SORT: bool, const REVERSE_SORT: bool> $op_trait
+            for Point2D<T, INVERT_SORT, REVERSE_SORT>
+        {
+            type Output = Self;
 
-    fn add(self, rhs: Self) -> Self::Output {
-        Self::new(self.x + rhs.x, self.y + rhs.y)
-    }
+            fn $op(self, rhs: Self) -> Self::Output {
+                Self::new(self.x.$op_fn(rhs.x), self.y.$op_fn(rhs.y))
+            }
+        }
+
+        impl<T: Integer, const INVERT_SORT: bool, const REVERSE_SORT: bool> $assign_trait
+            for Point2D<T, INVERT_SORT, REVERSE_SORT>
+        {
+            fn $assign(&mut self, rhs: Self) {
+                self.x = self.x.$op_fn(rhs.x);
+                self.y = self.y.$op_fn(rhs.y);
+            }
+        }
+    };
 }
 
-impl<T: Integer, const INVERT_SORT: bool, const REVERSE_SORT: bool> Sub
-    for Point2D<T, INVERT_SORT, REVERSE_SORT>
-{
-    type Output = Self;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        Self::new(self.x - rhs.x, self.y - rhs.y)
-    }
-}
-
-impl<T: Integer, const INVERT_SORT: bool, const REVERSE_SORT: bool> Mul
-    for Point2D<T, INVERT_SORT, REVERSE_SORT>
-{
-    type Output = Self;
-
-    fn mul(self, rhs: Self) -> Self::Output {
-        Self::new(self.x * rhs.x, self.y * rhs.y)
-    }
-}
-
-impl<T: Integer, const INVERT_SORT: bool, const REVERSE_SORT: bool> Div
-    for Point2D<T, INVERT_SORT, REVERSE_SORT>
-{
-    type Output = Self;
-
-    fn div(self, rhs: Self) -> Self::Output {
-        Self::new(self.x / rhs.x, self.y / rhs.y)
-    }
-}
-
-impl<T: Integer, const INVERT_SORT: bool, const REVERSE_SORT: bool> AddAssign
-    for Point2D<T, INVERT_SORT, REVERSE_SORT>
-{
-    fn add_assign(&mut self, rhs: Self) {
-        self.x += rhs.x;
-        self.y += rhs.y;
-    }
-}
-
-impl<T: Integer, const INVERT_SORT: bool, const REVERSE_SORT: bool> SubAssign
-    for Point2D<T, INVERT_SORT, REVERSE_SORT>
-{
-    fn sub_assign(&mut self, rhs: Self) {
-        self.x -= rhs.x;
-        self.y -= rhs.y;
-    }
-}
-
-impl<T: Integer, const INVERT_SORT: bool, const REVERSE_SORT: bool> MulAssign
-    for Point2D<T, INVERT_SORT, REVERSE_SORT>
-{
-    fn mul_assign(&mut self, rhs: Self) {
-        self.x *= rhs.x;
-        self.y *= rhs.y;
-    }
-}
-
-impl<T: Integer, const INVERT_SORT: bool, const REVERSE_SORT: bool> DivAssign
-    for Point2D<T, INVERT_SORT, REVERSE_SORT>
-{
-    fn div_assign(&mut self, rhs: Self) {
-        self.x /= rhs.x;
-        self.y /= rhs.y;
-    }
-}
+impl_math!(wrapping_add, Add, add, AddAssign, add_assign);
+impl_math!(wrapping_sub, Sub, sub, SubAssign, sub_assign);
+impl_math!(wrapping_mul, Mul, mul, MulAssign, mul_assign);
+impl_math!(wrapping_div, Div, div, DivAssign, div_assign);
 
 #[cfg(test)]
 mod test {

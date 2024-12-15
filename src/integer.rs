@@ -31,6 +31,8 @@ pub trait Integer:
 
     fn wrapping_add(self, rhs: Self) -> Self;
     fn wrapping_sub(self, rhs: Self) -> Self;
+    fn wrapping_mul(self, rhs: Self) -> Self;
+    fn wrapping_div(self, rhs: Self) -> Self;
 }
 
 macro_rules! impl_integer {
@@ -52,6 +54,14 @@ macro_rules! impl_integer {
             fn wrapping_sub(self, rhs: Self) -> Self {
                 self.wrapping_sub(rhs)
             }
+
+            fn wrapping_mul(self, rhs: Self) -> Self {
+                self.wrapping_mul(rhs)
+            }
+
+            fn wrapping_div(self, rhs: Self) -> Self {
+                self.wrapping_div(rhs)
+            }
         }
     };
     (UNSIGNED => $ty:ty) => {
@@ -67,6 +77,14 @@ macro_rules! impl_integer {
 
             fn wrapping_sub(self, rhs: Self) -> Self {
                 self.wrapping_sub(rhs)
+            }
+
+            fn wrapping_mul(self, rhs: Self) -> Self {
+                self.wrapping_mul(rhs)
+            }
+
+            fn wrapping_div(self, rhs: Self) -> Self {
+                self.wrapping_div(rhs)
             }
         }
     };

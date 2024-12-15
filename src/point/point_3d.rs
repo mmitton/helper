@@ -133,69 +133,34 @@ impl<T: Integer> Point3D<T> {
     }
 }
 
-impl<T: Integer> Add for Point3D<T> {
-    type Output = Self;
+macro_rules! impl_math {
+    ($op_fn:ident, $op_trait:ident, $op:ident, $assign_trait:ident, $assign:ident) => {
+        impl<T: Integer> $op_trait for Point3D<T> {
+            type Output = Self;
 
-    fn add(self, rhs: Self) -> Self::Output {
-        Self::new(self.x + rhs.x, self.y + rhs.y, self.z + rhs.z)
-    }
+            fn $op(self, rhs: Self) -> Self::Output {
+                Self::new(
+                    self.x.$op_fn(rhs.x),
+                    self.y.$op_fn(rhs.y),
+                    self.z.$op_fn(rhs.z),
+                )
+            }
+        }
+
+        impl<T: Integer> $assign_trait for Point3D<T> {
+            fn $assign(&mut self, rhs: Self) {
+                self.x = self.x.$op_fn(rhs.x);
+                self.y = self.y.$op_fn(rhs.y);
+                self.z = self.z.$op_fn(rhs.z);
+            }
+        }
+    };
 }
 
-impl<T: Integer> Sub for Point3D<T> {
-    type Output = Self;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        Self::new(self.x - rhs.x, self.y - rhs.y, self.z - rhs.z)
-    }
-}
-
-impl<T: Integer> Mul for Point3D<T> {
-    type Output = Self;
-
-    fn mul(self, rhs: Self) -> Self::Output {
-        Self::new(self.x * rhs.x, self.y * rhs.y, self.y * rhs.z)
-    }
-}
-
-impl<T: Integer> Div for Point3D<T> {
-    type Output = Self;
-
-    fn div(self, rhs: Self) -> Self::Output {
-        Self::new(self.x / rhs.x, self.y / rhs.y, self.z / rhs.z)
-    }
-}
-
-impl<T: Integer> AddAssign for Point3D<T> {
-    fn add_assign(&mut self, rhs: Self) {
-        self.x += rhs.x;
-        self.y += rhs.y;
-        self.z += rhs.z;
-    }
-}
-
-impl<T: Integer> SubAssign for Point3D<T> {
-    fn sub_assign(&mut self, rhs: Self) {
-        self.x -= rhs.x;
-        self.y -= rhs.y;
-        self.z -= rhs.z;
-    }
-}
-
-impl<T: Integer> MulAssign for Point3D<T> {
-    fn mul_assign(&mut self, rhs: Self) {
-        self.x *= rhs.x;
-        self.y *= rhs.y;
-        self.z *= rhs.z;
-    }
-}
-
-impl<T: Integer> DivAssign for Point3D<T> {
-    fn div_assign(&mut self, rhs: Self) {
-        self.x /= rhs.x;
-        self.y /= rhs.y;
-        self.z /= rhs.z;
-    }
-}
+impl_math!(wrapping_add, Add, add, AddAssign, add_assign);
+impl_math!(wrapping_sub, Sub, sub, SubAssign, sub_assign);
+impl_math!(wrapping_mul, Mul, mul, MulAssign, mul_assign);
+impl_math!(wrapping_div, Div, div, DivAssign, div_assign);
 
 #[cfg(test)]
 mod test {
