@@ -71,6 +71,23 @@ where
         }
     }
 
+    fn get_first_path(&self, target: T) -> Vec<T> {
+        let mut path = Vec::new();
+
+        let mut cur = target;
+        loop {
+            let Some(seen_entry) = self.hash.get(&cur) else {
+                panic!("Cannot trace path");
+            };
+            if seen_entry.1.is_empty() {
+                path.reverse();
+                return path;
+            } else {
+                cur = seen_entry.1[0];
+            }
+        }
+    }
+
     fn get_paths_from(&self, target: T) -> Vec<Vec<T>> {
         let mut paths = Vec::new();
 
@@ -183,6 +200,25 @@ impl Dijkstra {
 
             for path in seen.get_paths_from(target) {
                 paths.push(path);
+            }
+
+            true
+        });
+
+        result
+    }
+
+    pub fn find_first_path<C, T, N, NI>(start: T, next: N) -> Option<(C, Vec<T>)>
+    where
+        C: Integer,
+        T: Hash + Eq + Copy,
+        N: FnMut(T) -> NI,
+        NI: Iterator<Item = (C, T, bool)>,
+    {
+        let mut result: Option<(C, Vec<T>)> = None;
+        Self::dijkstra_internal(start, next, |cost, target, seen| {
+            if result.is_none() {
+                result = Some((cost, seen.get_first_path(target)));
             }
 
             true
