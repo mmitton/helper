@@ -52,6 +52,25 @@ where
         false
     }
 
+    fn add_unique_steps(&self, target: T, unique: &mut HashSet<T>) {
+        let mut work: Vec<T> = vec![target];
+        let mut seen: HashSet<T> = HashSet::default();
+        seen.insert(target);
+
+        while let Some(cur) = work.pop() {
+            if let Some(seen_entry) = self.hash.get(&cur) {
+                if !seen_entry.1.is_empty() {
+                    for from in seen_entry.1.iter() {
+                        if seen.insert(*from) {
+                            unique.insert(*from);
+                            work.push(*from);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     fn get_paths_from(&self, target: T) -> Vec<Vec<T>> {
         let mut paths = Vec::new();
 
@@ -132,6 +151,25 @@ impl Dijkstra {
         result
     }
 
+    pub fn find_first_unique_steps<C, T, N, NI>(start: T, next: N) -> Option<(C, HashSet<T>)>
+    where
+        C: Integer,
+        T: Hash + Eq + Copy,
+        N: FnMut(T) -> NI,
+        NI: Iterator<Item = (C, T, bool)>,
+    {
+        let mut result: Option<(C, HashSet<T>)> = None;
+        Self::dijkstra_internal(start, next, |cost, target, seen| {
+            let (_, unique) = result.get_or_insert_with(|| (cost, HashSet::default()));
+
+            seen.add_unique_steps(target, unique);
+
+            true
+        });
+
+        result
+    }
+
     pub fn find_first_paths<C, T, N, NI>(start: T, next: N) -> Option<(C, Vec<Vec<T>>)>
     where
         C: Integer,
@@ -166,6 +204,23 @@ impl Dijkstra {
             false
         });
         result
+    }
+
+    pub fn find_all_unique_steps<C, T, N, NI>(start: T, next: N) -> HashSet<T>
+    where
+        C: Integer,
+        T: Hash + Eq + Copy,
+        N: FnMut(T) -> NI,
+        NI: Iterator<Item = (C, T, bool)>,
+    {
+        let mut unique = HashSet::default();
+        Self::dijkstra_internal(start, next, |_, target, seen| {
+            seen.add_unique_steps(target, &mut unique);
+
+            false
+        });
+
+        unique
     }
 
     pub fn find_all_paths<C, T, N, NI>(start: T, next: N) -> Vec<(C, Vec<Vec<T>>)>
