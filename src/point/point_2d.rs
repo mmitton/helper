@@ -64,14 +64,7 @@ impl<T: Integer, const INVERT_SORT: bool, const REVERSE_SORT: bool>
     }
 
     pub fn manhattan_dist(&self, rhs: &Self) -> T {
-        fn dist<T: Integer>(a: T, b: T) -> T {
-            if a > b {
-                a - b
-            } else {
-                b - a
-            }
-        }
-        dist(self.x, rhs.x) + dist(self.y, rhs.y)
+        self.x.dist(rhs.x) + self.y.dist(rhs.y)
     }
 
     pub fn cardinal_neighbors(&self) -> [Self; 4] {

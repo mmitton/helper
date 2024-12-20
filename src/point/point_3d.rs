@@ -21,14 +21,7 @@ impl<T: Integer> Point3D<T> {
     }
 
     pub fn manhattan_dist(&self, rhs: &Self) -> T {
-        fn dist<T: Integer>(a: T, b: T) -> T {
-            if a > b {
-                a - b
-            } else {
-                b - a
-            }
-        }
-        dist(self.x, rhs.x) + dist(self.y, rhs.y) + dist(self.z, rhs.z)
+        self.x.dist(rhs.x) + self.y.dist(rhs.y) + self.z.dist(rhs.z)
     }
 
     pub fn cardinal_neighbors(&self) -> [Self; 6] {
